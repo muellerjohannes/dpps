@@ -1,2 +1,2 @@
 # dpps
-Using DPPs in a machine learning fashion to tackle real world problems.
+Using determinantal point processes (DPPs) in a machine learning fashion to tackle real world problems.
