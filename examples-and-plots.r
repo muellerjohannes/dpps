@@ -4,7 +4,6 @@
 # Minimal example _____________________________________________________________
 n <- 3
 L <- matrix(c(2,1,0,1,2,0,0,0,2), nrow=n)
-L
 
 # Points on a line ____________________________________________________________
 n <- 100
@@ -36,7 +35,22 @@ for (i in 1:n) {
 }
 L <- matrix(L, nrow=n)
 
-# Modelling L over the QD decopmosition _______________________________________
+# Modelling phi and q _________________________________________________________
+# Points on the line.
+m <- 99
+n <- m + 1
+q <- rep(0, n)
+for (i in 1:n) {
+  q[i] <- sqrt(m)   # 10^2 * sqrt(m) * exp(-0.3 * abs(i - 50.5))
+}
+phi <- rep(0, n^2)
+for (i in 1:n) {
+  for (j in 1:n) {
+    phi[(i - 1) * n + j] <- dnorm((i - j) / sqrt(m))
+  }
+}
+
+# Points in the square.
 m <- 29
 n <- (m + 1)^2
 q <- rep(0, n)
@@ -51,6 +65,34 @@ for (i in 1:n) {
   }
 }
 proc.time() - time
+
+# Quality diversity decomposition with small D
+phi <- rep(0, n * sqrt(n) * 10)
+time <- proc.time()
+for (i in 1:n) {
+  for (j in 1:(sqrt(n) * 10)) {
+    phi[(i - 1) * sqrt(n) + j] <- dnorm(sqrt(m) *
+                                          Distance(i, sqrt(n) / 10 * j, m))
+  }
+}
+proc.time() - time
+phi <- matrix(phi, ncol=n)
+
+# Log linear quality for the points on the line
+m <- 99
+n <- m + 1
+q <- rep(0, n)
+for (i in 1:n) {
+  q[i] <- 10^2 * sqrt(m) * exp(-0.2 * abs(i - 50.5))
+}
+phi <- rep(0, n^2)
+for (i in 1:n) {
+  for (j in 1:n) {
+    phi[(i - 1) * n + j] <- dnorm(2 * (i - j) / sqrt(m))
+  }
+}
+
+# General part.
 phi <- matrix(phi, nrow=n)
 for (i in 1:n) {
   phi[, i] <- sum(phi[, i]^2)^(-1/2) * phi[, i]
@@ -65,30 +107,14 @@ for (i in 1:n) {
 proc.time() - time
 L <- matrix(L, nrow=n)
 
-# Quality diversity decomposition with small D ________________________________
-phi <- rep(0, n * sqrt(n) * 10)
-time <- proc.time()
-for (i in 1:n) {
-  for (j in 1:(sqrt(n) * 10)) {
-    phi[(i - 1) * sqrt(n) + j] <- dnorm(sqrt(m) *
-                                          Distance(i, sqrt(n) / 10 * j, m))
-  }
-}
-proc.time() - time
-phi <- matrix(phi, ncol=n)
-
-# Log linear quality __________________________________________________________
-
-# Compute the eigendecomposition; also set near zero eigenvalues to zero ______
+# Compute the eigendecomposition, set near zero eigenvalues to zero and
+# set up poisson point process with same expected cardinality _________________
 edc <- eigen(L)
 lambda <- edc$values
 lambda[abs(lambda) < 10^(-9)] <- 0
-max(lambda)
 min(lambda)
 mean <- sum(lambda / (1 + lambda))
 eigenvectors <- edc$vectors
-
-# Set up poisson point process with same expected cardinality _________________
 D <- diag(rep(mean / n / (1 - mean / n), n))
 edc2 <- eigen(D)
 lambda2 <- edc2$values
@@ -119,8 +145,6 @@ pointsPoisson <- matrix(Coordinates(dataPoisson, m), ncol=2)
 plot(pointsPoisson, xlim=0:1, ylim=0:1,
      # xaxt='n', yaxt='n',
      xlab="", ylab="", asp=1)
-
-Coordinates(1, m)
 
 # Remove all objects apart from functions
 rm(list = setdiff(ls(), lsf.str()))
