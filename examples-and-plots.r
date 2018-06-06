@@ -111,14 +111,16 @@ legend("topright", inset=.05, legend=c("DPP", "Poisson"), pch=c(1, 5))
 
 # Sample from both point processes and plot the points in the square
 # par(mfrow = c(1,1))
-dataDPP <- SamplingDPP(lambda, eigenvectors)
+dataDPP <- sort(SamplingDPP(lambda, eigenvectors))
 pointsDPP <- matrix(Coordinates(dataDPP, m), ncol=2)
-plot(pointsDPP, xlim=0:1, ylim=0:1,
-     xaxt='n', yaxt='n', xlab="", ylab="", asp=1)
+plot(pointsDPP, xlim=0:1, ylim=0:1, xlab="", ylab="", asp=1)
 dataPoisson <- sort(SamplingDPP(lambda2, eigenvectors2))
 pointsPoisson <- matrix(Coordinates(dataPoisson, m), ncol=2)
 plot(pointsPoisson, xlim=0:1, ylim=0:1,
-     xaxt='n', yaxt='n', xlab="", ylab="", asp=1)
+     # xaxt='n', yaxt='n',
+     xlab="", ylab="", asp=1)
+
+Coordinates(1, m)
 
 # Remove all objects apart from functions
 rm(list = setdiff(ls(), lsf.str()))
