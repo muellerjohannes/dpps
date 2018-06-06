@@ -104,7 +104,6 @@ SamplingDPP(lambda, eigenvectors)
 # Sample from both point processes and plot the points on the line
 pointsDPP <- SamplingDPP(lambda, eigenvectors)
 pointsPoisson <- SamplingDPP(lambda2, eigenvectors2)
-
 plot(rep(1, length(pointsDPP)), pointsDPP,
      ylim=c(1, n), xlim=c(.4, 3.2), xaxt='n', ylab="Points", xlab="")
 points(rep(2, length(pointsPoisson)), pointsPoisson, pch=5)

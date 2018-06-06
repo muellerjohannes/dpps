@@ -4,34 +4,22 @@ SamplingDPP <- function (lambda, eigenvectors) {
   J <- runif(N) <= lambda/(1 + lambda)
   k <- sum(J)
   V <- matrix(eigenvectors[, J], nrow=N)
-  Y <- c()
+  Y <- rep(0, k)
   
   # Second part of the algorithm, the big while loop
   while (k > 0) {
     # Calculating the weights and selecting an item i according to them
-    wghts <- c()
-    for (j in 1:N) {
-      wghts <- append(wghts, k^(-1) * sum(V[j, ]^2))
-    }
-    # rm(j)
+    wghts <- k^(-1) * rowSums(V^2)
     i <- sample(N, 1, prob=wghts)
-    # rm(wghts)
-    Y <- append(Y, i)
+    Y[k] <- i
     if (k == 1) break
     
     # Projecting e_i onto the span of V
-    help <- rep(0, N)
-    for (j in 1:k) {
-      help <- help + V[i, j]*V[, j]
-    }
-    # rm(j)
+    help <- V %*% V[i, ]
     help <- sum(help^2)^(-1/2) * help
     
     # Projecting the elements of V onto the subspace orthogonal to e_i/the projection help of e_i
-    for (j in 1:k) {
-      V[, j] <- V[, j]-sum(V[, j] * help) * help
-    }
-    # rm(j)
+    V <- V - help %*% t(t(V) %*% help)
     
     # Orthonormalize V and set near zero entries to zero
     V[abs(V) < 10^(-9)] <- 0
@@ -47,7 +35,6 @@ SamplingDPP <- function (lambda, eigenvectors) {
       if (sum(V[, j]^2) > 0) {
         V[, j] <- sum(V[, j]^2)^(-1/2) * V[, j]
       }
-      # rm(m)
       j <- j + 1
     }
     V[abs(V) < 10^(-9)] <- 0
@@ -57,7 +44,5 @@ SamplingDPP <- function (lambda, eigenvectors) {
     q <- qr(V)
     V <- matrix(V[, q$pivot[seq(k)]], ncol=k)
   }
-  # Remove variables
-  # rm(list = setdiff(ls(), lsf.str()))  # Is this necessary? I think they are removed automatically
   return(Y)
 }
