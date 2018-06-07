@@ -37,21 +37,22 @@ L <- matrix(L, nrow=n)
 
 # Modelling phi and q _________________________________________________________
 # Points on the line.
-m <- 99
+m <- 999
 n <- m + 1
-q <- rep(0, n)
-for (i in 1:n) {
-  q[i] <- sqrt(m)   # 10^2 * sqrt(m) * exp(-0.3 * abs(i - 50.5))
-}
+q <- rep(0.01 * sqrt(m), n)
+# for (i in 1:n) {
+#   q[i] <- sqrt(m)   # 10^2 * sqrt(m) * exp(-0.3 * abs(i - 50.5))
+# }
 phi <- rep(0, n^2)
 for (i in 1:n) {
   for (j in 1:n) {
     phi[(i - 1) * n + j] <- dnorm((i - j) / sqrt(m))
   }
 }
+phi <- matrix(phi, ncol=n)
 
 # Points in the square.
-m <- 39
+m <- 59
 n <- (m + 1)^2
 q <- rep(sqrt(m), n)
 x <- ceiling(1:n^2 / n)
@@ -82,11 +83,12 @@ for (i in 1:n) {
     phi[(i - 1) * n + j] <- dnorm(2 * (i - j) / sqrt(m))
   }
 }
+phi <- matrix(phi, ncol=n)
 
 # Log linear quality for the points in the square
 m <- 39
 n <- (m + 1)^2
-q <- sqrt(m) *exp(-11 * DistanceNew(rep(5, n), 1:n, 2, m))
+q <- sqrt(m) *exp(-6 * DistanceNew(rep(5, n), 1:n, 2, m))
 x <- ceiling(1:n^2 / n)
 y <- rep(1:n, n)
 time <- proc.time()
@@ -112,11 +114,8 @@ lambda <- edc$values
 lambda[abs(lambda) < 10^(-9)] <- 0
 mean <- sum(lambda / (1 + lambda))
 eigenvectors <- edc$vectors
-D <- diag(rep(mean / n / (1 - mean / n), n))
-edc2 <- eigen(D)
-lambda2 <- edc2$values
-sum(lambda2 / (1 + lambda2))
-eigenvectors2 <- edc2$vectors
+lambda2 <- rep(mean / n / (1 - mean / n), n)
+eigenvectors2 <- diag(rep(1, n))
 proc.time() - time
 
 # Sample and plot things ______________________________________________________
@@ -124,7 +123,7 @@ proc.time() - time
 
 # Minimal example
 sort(SamplingDPP(lambda, eigenvectors))
-
+lambda
 # Sample from both point processes and plot the points on the line
 pointsDPP <- SamplingDPP(lambda, eigenvectors)
 pointsPoisson <- SamplingDPP(lambda2, eigenvectors2)
@@ -141,7 +140,7 @@ pointsDPP <- t(CoordinatesNew(dataDPP, m))
 plot(pointsDPP, xlim=0:1, ylim=0:1, xlab="", ylab="", asp=1)
 proc.time() - time
 dataPoisson <- sort(SamplingDPP(lambda2, eigenvectors2))
-pointsPoisson <- matrix(Coordinates(dataPoisson, m), ncol=2)
+pointsPoisson <- t(CoordinatesNew(dataPoisson, m))
 plot(pointsPoisson, xlim=0:1, ylim=0:1,
      # xaxt='n', yaxt='n',
      xlab="", ylab="", asp=1)
