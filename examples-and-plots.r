@@ -17,13 +17,13 @@ L <- matrix(L, nrow=n)
 
 # Points in the square ________________________________________________________
 # Define the coordinates of a point
-Coordinates <- function(i, n) {
+CoordinatesNew <- function(i, n) {
   y1 <- floor((i - 1) / (n + 1))
   x1 <- i - 1 - (n + 1) * y1
-  return (c(x1, y1)/n)
+  return (t(matrix(c(x1, y1)/n, nrow=length(i))))
 }
-Distance <- function (i, j, n) {
-  return (sqrt(sum((Coordinates(i, n) - Coordinates(j, n))^2)))
+DistanceNew <- function (i, j, n, d) {
+  return (sqrt(colSums((CoordinatesNew(i, n) - CoordinatesNew(j, d))^2)))
 }
 m <- 19
 n <- (m + 1)^2
@@ -51,32 +51,23 @@ for (i in 1:n) {
 }
 
 # Points in the square.
-m <- 29
+m <- 39
 n <- (m + 1)^2
-q <- rep(0, n)
-for (i in 1:n) {
-  q[i] <- sqrt(m)
-}
-phi <- rep(0, n^2)
+q <- rep(sqrt(m), n)
+x <- ceiling(1:n^2 / n)
+y <- rep(1:n, n)
 time <- proc.time()
-for (i in 1:n) {
-  for (j in 1:n) {
-    phi[(i - 1) * n + j] <- dnorm(sqrt(m) * Distance(i, j, m))
-  }
-}
+phi <- dnorm(sqrt(m) *matrix(DistanceNew(x, y, m, m), n))
 proc.time() - time
 
 # Quality diversity decomposition with small D
-phi <- rep(0, n * sqrt(n) * 10)
+d <- 25
+q <- rep(10^5 * sqrt(m), n)
+x <- ceiling(1:(n*d) / d)
+y <- rep(1:d, n)
 time <- proc.time()
-for (i in 1:n) {
-  for (j in 1:(sqrt(n) * 10)) {
-    phi[(i - 1) * sqrt(n) + j] <- dnorm(sqrt(m) *
-                                          Distance(i, sqrt(n) / 10 * j, m))
-  }
-}
+phi2 <- dnorm(2 * sqrt(m) * matrix(DistanceNew(x, y, m, sqrt(d) - 1), ncol=n))
 proc.time() - time
-phi <- matrix(phi, ncol=n)
 
 # Log linear quality for the points on the line
 m <- 99
@@ -92,27 +83,33 @@ for (i in 1:n) {
   }
 }
 
-# General part.
-phi <- matrix(phi, nrow=n)
-for (i in 1:n) {
-  phi[, i] <- sum(phi[, i]^2)^(-1/2) * phi[, i]
-}
-L <- rep(0, n^2)
+# Log linear quality for the points in the square
+m <- 39
+n <- (m + 1)^2
+q <- sqrt(m) *exp(-11 * DistanceNew(rep(5, n), 1:n, 2, m))
+x <- ceiling(1:n^2 / n)
+y <- rep(1:n, n)
 time <- proc.time()
-for (i in 1:n) {
-  for (j in 1:n) {
-    L[(i - 1) * n + j] <- q[i] * q[j] * sum(phi[, i] * phi[, j])
-  }
-}
+phi <- dnorm(2 * sqrt(m) *matrix(DistanceNew(x, y, m, m), n))
 proc.time() - time
-L <- matrix(L, nrow=n)
+
+# General part.
+d <- length(phi) / n
+for (i in 1:d) {
+  phi[i, ] <- sum(phi[i, ]^2)^(-1/2) * phi[i, ]
+}
+B <- t(phi) * q
+C <- t(B) %*% B
+time <- proc.time()
+L <- B %*% t(B)
+proc.time() - time
 
 # Compute the eigendecomposition, set near zero eigenvalues to zero and
 # set up poisson point process with same expected cardinality _________________
+time <- proc.time()
 edc <- eigen(L)
 lambda <- edc$values
 lambda[abs(lambda) < 10^(-9)] <- 0
-min(lambda)
 mean <- sum(lambda / (1 + lambda))
 eigenvectors <- edc$vectors
 D <- diag(rep(mean / n / (1 - mean / n), n))
@@ -120,12 +117,13 @@ edc2 <- eigen(D)
 lambda2 <- edc2$values
 sum(lambda2 / (1 + lambda2))
 eigenvectors2 <- edc2$vectors
+proc.time() - time
 
 # Sample and plot things ______________________________________________________
 # _____________________________________________________________________________
 
 # Minimal example
-SamplingDPP(lambda, eigenvectors)
+sort(SamplingDPP(lambda, eigenvectors))
 
 # Sample from both point processes and plot the points on the line
 pointsDPP <- SamplingDPP(lambda, eigenvectors)
@@ -137,9 +135,11 @@ legend("topright", inset=.05, legend=c("DPP", "Poisson"), pch=c(1, 5))
 
 # Sample from both point processes and plot the points in the square
 # par(mfrow = c(1,1))
+time <- proc.time()
 dataDPP <- sort(SamplingDPP(lambda, eigenvectors))
-pointsDPP <- matrix(Coordinates(dataDPP, m), ncol=2)
+pointsDPP <- t(CoordinatesNew(dataDPP, m))
 plot(pointsDPP, xlim=0:1, ylim=0:1, xlab="", ylab="", asp=1)
+proc.time() - time
 dataPoisson <- sort(SamplingDPP(lambda2, eigenvectors2))
 pointsPoisson <- matrix(Coordinates(dataPoisson, m), ncol=2)
 plot(pointsPoisson, xlim=0:1, ylim=0:1,
