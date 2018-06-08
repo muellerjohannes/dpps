@@ -37,12 +37,9 @@ L <- matrix(L, nrow=n)
 
 # Modelling phi and q _________________________________________________________
 # Points on the line.
-m <- 999
+m <- 99
 n <- m + 1
-q <- rep(0.01 * sqrt(m), n)
-# for (i in 1:n) {
-#   q[i] <- sqrt(m)   # 10^2 * sqrt(m) * exp(-0.3 * abs(i - 50.5))
-# }
+q <- rep(sqrt(m), n)
 phi <- rep(0, n^2)
 for (i in 1:n) {
   for (j in 1:n) {
@@ -52,7 +49,7 @@ for (i in 1:n) {
 phi <- matrix(phi, ncol=n)
 
 # Points in the square.
-m <- 59
+m <- 39
 n <- (m + 1)^2
 q <- rep(sqrt(m), n)
 x <- ceiling(1:n^2 / n)
@@ -141,9 +138,7 @@ plot(pointsDPP, xlim=0:1, ylim=0:1, xlab="", ylab="", asp=1)
 proc.time() - time
 dataPoisson <- sort(SamplingDPP(lambda2, eigenvectors2))
 pointsPoisson <- t(CoordinatesNew(dataPoisson, m))
-plot(pointsPoisson, xlim=0:1, ylim=0:1,
-     # xaxt='n', yaxt='n',
-     xlab="", ylab="", asp=1)
+plot(pointsPoisson, xlim=0:1, ylim=0:1, xlab="", ylab="", asp=1)
 
 # Remove all objects apart from functions
 rm(list = setdiff(ls(), lsf.str()))

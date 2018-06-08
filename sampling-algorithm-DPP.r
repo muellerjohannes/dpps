@@ -1,3 +1,6 @@
+# TODO: Make Gram-Schmidt work vector valued
+# TODO: Implement dual sampling algorithm
+
 SamplingDPP <- function (lambda, eigenvectors) {
   # First part of the algorithm, doing the selection of the eigenvectors
   N = length(lambda)
