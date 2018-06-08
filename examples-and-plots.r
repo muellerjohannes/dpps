@@ -49,7 +49,7 @@ for (i in 1:n) {
 phi <- matrix(phi, ncol=n)
 
 # Points in the square.
-m <- 39
+m <- 69
 n <- (m + 1)^2
 q <- rep(sqrt(m), n)
 x <- ceiling(1:n^2 / n)
@@ -134,11 +134,11 @@ legend("topright", inset=.05, legend=c("DPP", "Poisson"), pch=c(1, 5))
 time <- proc.time()
 dataDPP <- sort(SamplingDPP(lambda, eigenvectors))
 pointsDPP <- t(CoordinatesNew(dataDPP, m))
-plot(pointsDPP, xlim=0:1, ylim=0:1, xlab="", ylab="", asp=1)
+plot(pointsDPP, xlim=0:1, ylim=0:1, xlab="", ylab="", xaxt='n', yaxt='n', asp=1)
 proc.time() - time
 dataPoisson <- sort(SamplingDPP(lambda2, eigenvectors2))
 pointsPoisson <- t(CoordinatesNew(dataPoisson, m))
-plot(pointsPoisson, xlim=0:1, ylim=0:1, xlab="", ylab="", asp=1)
+plot(pointsPoisson, xlim=0:1, ylim=0:1, xlab="", ylab="", xaxt='n', yaxt='n', asp=1)
 
 # Remove all objects apart from functions
 rm(list = setdiff(ls(), lsf.str()))
