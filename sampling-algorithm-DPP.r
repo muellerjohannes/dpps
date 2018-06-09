@@ -1,5 +1,5 @@
 # TODO: Make Gram-Schmidt work vector valued
-# TODO: Implement dual sampling algorithm
+# TODO: Speed up selection of linear independent vectors
 
 SamplingDPP <- function (lambda, eigenvectors) {
   # First part of the algorithm, doing the selection of the eigenvectors
@@ -30,10 +30,11 @@ SamplingDPP <- function (lambda, eigenvectors) {
     while(j <= k) {
       help2 <- rep(0, N)
       m <- 1
-      while (m <= j - 1) {
+        while (m <= j - 1) {
         help2 <- help2 + sum(V[, j] * V[, m]) * V[, m]
         m <- m + 1
       }
+      # help2 <- (matrix(V[, 1:(j - 1)], nrow=N) %*% colSums(matrix(V[, j] * V[, 1:(j - 1)], nrow=N)))[, 1]
       V[, j] <- V[, j] - help2
       if (sum(V[, j]^2) > 0) {
         V[, j] <- sum(V[, j]^2)^(-1/2) * V[, j]

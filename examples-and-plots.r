@@ -37,7 +37,7 @@ L <- matrix(L, nrow=n)
 
 # Modelling phi and q _________________________________________________________
 # Points on the line.
-m <- 99
+m <- 19
 n <- m + 1
 q <- rep(sqrt(m), n)
 phi <- rep(0, n^2)
@@ -49,7 +49,7 @@ for (i in 1:n) {
 phi <- matrix(phi, ncol=n)
 
 # Points in the square.
-m <- 69
+m <- 19
 n <- (m + 1)^2
 q <- rep(sqrt(m), n)
 x <- ceiling(1:n^2 / n)
@@ -115,6 +115,13 @@ lambda2 <- rep(mean / n / (1 - mean / n), n)
 eigenvectors2 <- diag(rep(1, n))
 proc.time() - time
 
+# Set up dual sampling
+edc <- eigen(C)
+lambda <- edc$values
+lambda[abs(lambda) < 10^(-9)] <- 0
+mean <- sum(lambda / (1 + lambda))
+eigenvectors <- edc$vectors
+
 # Sample and plot things ______________________________________________________
 # _____________________________________________________________________________
 
@@ -139,6 +146,14 @@ proc.time() - time
 dataPoisson <- sort(SamplingDPP(lambda2, eigenvectors2))
 pointsPoisson <- t(CoordinatesNew(dataPoisson, m))
 plot(pointsPoisson, xlim=0:1, ylim=0:1, xlab="", ylab="", xaxt='n', yaxt='n', asp=1)
+
+# Dual sampling
+time <- proc.time()
+dataDPP <- sort(DualSamplingDPP(lambda, eigenvectors, C, B))
+sort(DualSamplingDPP(lambda, eigenvectors, C, B))
+pointsDPP <- t(CoordinatesNew(dataDPP, m))
+plot(pointsDPP, xlim=0:1, ylim=0:1, xlab="", ylab="", xaxt='n', yaxt='n', asp=1)
+proc.time() - time
 
 # Remove all objects apart from functions
 rm(list = setdiff(ls(), lsf.str()))
