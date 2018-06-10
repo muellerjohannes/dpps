@@ -41,27 +41,29 @@ q <- rep(10^5 * sqrt(m), n)
 x <- ceiling(1:(n*d) / d)
 y <- rep(1:d, n)
 time <- proc.time()
-phi2 <- dnorm(2 * sqrt(m) * matrix(DistanceNew(x, y, m, sqrt(d) - 1), ncol=n))
+phi <- dnorm(2 * sqrt(m) * matrix(DistanceNew(x, y, m, sqrt(d) - 1), ncol=n))
 proc.time() - time
 
 # Log linear quality for the points in the square _____________________________
-m <- 39
+m <- 19
 n <- (m + 1)^2
-q <- sqrt(m) *exp(-6 * DistanceNew(rep(5, n), 1:n, 2, m))
+q <- exp(-6 * DistanceNew(rep(5, n), 1:n, 2, m))
 x <- ceiling(1:n^2 / n)
 y <- rep(1:n, n)
 time <- proc.time()
-phi <- dnorm(2 * sqrt(m) *matrix(DistanceNew(x, y, m, m), n))
+phi <- dnorm(2 * sqrt(m) * matrix(DistanceNew(x, y, m, m), n))
 proc.time() - time
 
+
 # General part, defining L ____________________________________________________
-d <- length(phi) / n
-for (i in 1:d) {
-  phi[i, ] <- sum(phi[i, ]^2)^(-1/2) * phi[i, ]
+# d <- length(phi) / n
+for (i in 1:n) {
+  phi[, i] <- sum(phi[, i]^2)^(-1/2) * phi[, i]
 }
-B <- t(phi) * q
+S <- t(phi) %*% phi
+# B <- t(phi) * q
 time <- proc.time()
-L <- B %*% t(B)
+L <- t(t(q * S) * q)  # B %*% t(B)
 proc.time() - time
 
 # Compute the eigendecomposition, set near zero eigenvalues to zero and
