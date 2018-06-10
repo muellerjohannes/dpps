@@ -1,5 +1,6 @@
-# Different kernels L _________________________________________________________
-# _____________________________________________________________________________
+# In this example we sample points on a (discrete) line according to a DPP
+# We model L directly and via the quality-diversity decomposition. We plot and
+# compare the patterns to uncorrelated points i.e. to a Poisson point process.
 
 # Minimal example _____________________________________________________________
 n <- 3
@@ -15,29 +16,9 @@ for (i in 1:n) {
 }
 L <- matrix(L, nrow=n)
 
-# Points in the square ________________________________________________________
-# Define the coordinates of a point
-CoordinatesNew <- function(i, n) {
-  y1 <- floor((i - 1) / (n + 1))
-  x1 <- i - 1 - (n + 1) * y1
-  return (t(matrix(c(x1, y1)/n, nrow=length(i))))
-}
-DistanceNew <- function (i, j, n, d) {
-  return (sqrt(colSums((CoordinatesNew(i, n) - CoordinatesNew(j, d))^2)))
-}
-m <- 19
-n <- (m + 1)^2
-L <- rep(0, n^2)
-for (i in 1:n) {
-  for (j in 1:n) {
-    L[(i - 1) * n + j] = n^2 * dnorm(Distance(i, j, m))
-  }
-}
-L <- matrix(L, nrow=n)
-
 # Modelling phi and q _________________________________________________________
 # Points on the line.
-m <- 19
+m <- 99
 n <- m + 1
 q <- rep(sqrt(m), n)
 phi <- rep(0, n^2)
@@ -48,26 +29,7 @@ for (i in 1:n) {
 }
 phi <- matrix(phi, ncol=n)
 
-# Points in the square.
-m <- 19
-n <- (m + 1)^2
-q <- rep(sqrt(m), n)
-x <- ceiling(1:n^2 / n)
-y <- rep(1:n, n)
-time <- proc.time()
-phi <- dnorm(sqrt(m) *matrix(DistanceNew(x, y, m, m), n))
-proc.time() - time
-
-# Quality diversity decomposition with small D
-d <- 25
-q <- rep(10^5 * sqrt(m), n)
-x <- ceiling(1:(n*d) / d)
-y <- rep(1:d, n)
-time <- proc.time()
-phi2 <- dnorm(2 * sqrt(m) * matrix(DistanceNew(x, y, m, sqrt(d) - 1), ncol=n))
-proc.time() - time
-
-# Log linear quality for the points on the line
+# Log linear quality for the points on the line _______________________________
 m <- 99
 n <- m + 1
 q <- rep(0, n)
@@ -82,23 +44,12 @@ for (i in 1:n) {
 }
 phi <- matrix(phi, ncol=n)
 
-# Log linear quality for the points in the square
-m <- 39
-n <- (m + 1)^2
-q <- sqrt(m) *exp(-6 * DistanceNew(rep(5, n), 1:n, 2, m))
-x <- ceiling(1:n^2 / n)
-y <- rep(1:n, n)
-time <- proc.time()
-phi <- dnorm(2 * sqrt(m) *matrix(DistanceNew(x, y, m, m), n))
-proc.time() - time
-
-# General part.
+# General part, define L ______________________________________________________
 d <- length(phi) / n
 for (i in 1:d) {
   phi[i, ] <- sum(phi[i, ]^2)^(-1/2) * phi[i, ]
 }
 B <- t(phi) * q
-C <- t(B) %*% B
 time <- proc.time()
 L <- B %*% t(B)
 proc.time() - time
@@ -123,11 +74,10 @@ mean <- sum(lambda / (1 + lambda))
 eigenvectors <- edc$vectors
 
 # Sample and plot things ______________________________________________________
-# _____________________________________________________________________________
-
 # Minimal example
 sort(SamplingDPP(lambda, eigenvectors))
 lambda
+
 # Sample from both point processes and plot the points on the line
 pointsDPP <- SamplingDPP(lambda, eigenvectors)
 pointsPoisson <- SamplingDPP(lambda2, eigenvectors2)
@@ -136,17 +86,6 @@ plot(rep(1, length(pointsDPP)), pointsDPP,
 points(rep(2, length(pointsPoisson)), pointsPoisson, pch=5)
 legend("topright", inset=.05, legend=c("DPP", "Poisson"), pch=c(1, 5))
 
-# Sample from both point processes and plot the points in the square
-# par(mfrow = c(1,1))
-time <- proc.time()
-dataDPP <- sort(SamplingDPP(lambda, eigenvectors))
-pointsDPP <- t(CoordinatesNew(dataDPP, m))
-plot(pointsDPP, xlim=0:1, ylim=0:1, xlab="", ylab="", xaxt='n', yaxt='n', asp=1)
-proc.time() - time
-dataPoisson <- sort(SamplingDPP(lambda2, eigenvectors2))
-pointsPoisson <- t(CoordinatesNew(dataPoisson, m))
-plot(pointsPoisson, xlim=0:1, ylim=0:1, xlab="", ylab="", xaxt='n', yaxt='n', asp=1)
-
 # Dual sampling
 time <- proc.time()
 dataDPP <- sort(DualSamplingDPP(lambda, eigenvectors, C, B))
@@ -154,6 +93,9 @@ sort(DualSamplingDPP(lambda, eigenvectors, C, B))
 pointsDPP <- t(CoordinatesNew(dataDPP, m))
 plot(pointsDPP, xlim=0:1, ylim=0:1, xlab="", ylab="", xaxt='n', yaxt='n', asp=1)
 proc.time() - time
+pointsDPP <- DualSamplingDPP(lambda, eigenvectors, C, B)
+plot(rep(1, length(pointsDPP)), pointsDPP,
+     ylim=c(1, n), xlim=c(.4, 3.2), xaxt='n', ylab="Points", xlab="")
 
 # Remove all objects apart from functions
 rm(list = setdiff(ls(), lsf.str()))
