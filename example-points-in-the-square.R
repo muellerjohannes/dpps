@@ -1,3 +1,5 @@
+# NEEDS: sampling algorithm
+
 # In this example we sample points on a two dimensional grid according to a DPP
 # We model L directly and via the quality-diversity decomposition including
 # different dimensions D for the feature vectors phi. We plot and compare the
@@ -47,7 +49,7 @@ proc.time() - time
 # Log linear quality for the points in the square _____________________________
 m <- 19
 n <- (m + 1)^2
-q <- exp(-6 * DistanceNew(rep(5, n), 1:n, 2, m))
+q <- exp(-6 * DistanceNew(rep(5, n), 1:n, 2, m) + log(sqrt(m)))
 x <- ceiling(1:n^2 / n)
 y <- rep(1:n, n)
 time <- proc.time()
