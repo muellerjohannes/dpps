@@ -47,7 +47,7 @@ phi <- dnorm(2 * sqrt(m) * matrix(DistanceNew(x, y, m, sqrt(d) - 1), ncol=n))
 proc.time() - time
 
 # Log linear quality for the points in the square _____________________________
-m <- 19
+m <- 39
 n <- (m + 1)^2
 q <- exp(-6 * DistanceNew(rep(5, n), 1:n, 2, m) + log(sqrt(m)))
 x <- ceiling(1:n^2 / n)

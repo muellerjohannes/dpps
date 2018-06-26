@@ -18,13 +18,13 @@ L <- matrix(L, nrow=n)
 
 # Modelling phi and q _________________________________________________________
 # Points on the line.
-m <- 99
+m <- 99  # 29
 n <- m + 1
-q <- rep(sqrt(m), n)
+q <- rep(10, n)  # 0-1 sequences: rep(10^2, n)
 phi <- rep(0, n^2)
 for (i in 1:n) {
   for (j in 1:n) {
-    phi[(i - 1) * n + j] <- dnorm((i - j) / sqrt(m))
+    phi[(i - 1) * n + j] <- dnorm((i - j), sd=10)  # 0-1 sequences: devide by 2
   }
 }
 phi <- matrix(phi, ncol=n)
@@ -45,13 +45,12 @@ for (i in 1:n) {
 phi <- matrix(phi, ncol=n)
 
 # General part, define L ______________________________________________________
-d <- length(phi) / n
-for (i in 1:d) {
-  phi[i, ] <- sum(phi[i, ]^2)^(-1/2) * phi[i, ]
+for (i in 1:n) {
+  phi[, i] <- sum(phi[, i]^2)^(-1/2) * phi[, i]
 }
-B <- t(phi) * q
+S <- t(phi) %*% phi
 time <- proc.time()
-L <- B %*% t(B)
+L <- t(q * S) * q
 proc.time() - time
 
 # Compute the eigendecomposition, set near zero eigenvalues to zero and
@@ -59,7 +58,7 @@ proc.time() - time
 time <- proc.time()
 edc <- eigen(L)
 lambda <- edc$values
-lambda[abs(lambda) < 10^(-9)] <- 0
+lambda[lambda < 10^(-9)] <- 0
 mean <- sum(lambda / (1 + lambda))
 eigenvectors <- edc$vectors
 lambda2 <- rep(mean / n / (1 - mean / n), n)
@@ -75,8 +74,12 @@ eigenvectors <- edc$vectors
 
 # Sample and plot things ______________________________________________________
 # Minimal example
-sort(SamplingDPP(lambda, eigenvectors))
-lambda
+
+# 0-1 sequences
+x <- sort(SamplingDPP(lambda, eigenvectors))
+as.integer(1:n %in% x)
+y <- sort(SamplingDPP(lambda2, eigenvectors2))
+as.integer(1:n %in% y)
 
 # Sample from both point processes and plot the points on the line
 pointsDPP <- SamplingDPP(lambda, eigenvectors)

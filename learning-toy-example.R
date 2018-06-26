@@ -8,11 +8,13 @@
 # and aim to estimate the log linearity parameter.
 
 # Generation of data
+time <- proc.time()
 T <- 30
 data <- rep(list(0), T)
 for (i in 1:T) {
   data[[i]] <- sort(SamplingDPP(lambda, eigenvectors))
 }
+proc.time() - time
 
 # Define the quality q, L, the feature sum and the loss in dependency of the
 # parameter theta
@@ -39,8 +41,11 @@ Loss <- function(theta) {
 }
 
 # Parameter estimations
-sol <- nlm(Loss, c(0, 0))
+time <- proc.time()
+sol <- nlm(Loss, c(-3, 0))
+proc.time() - time
 sol$estimate
+log(sqrt(m))
 
 # Algorithm for the gradient of the loss function
 
