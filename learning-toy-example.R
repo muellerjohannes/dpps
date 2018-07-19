@@ -9,7 +9,7 @@
 
 # Generation of data
 time <- proc.time()
-T <- 30
+T <- 8
 data <- rep(list(0), T)
 for (i in 1:T) {
   data[[i]] <- sort(SamplingDPP(lambda, eigenvectors))
@@ -24,8 +24,8 @@ Quality <- function(theta) {
 LFunction <- function(theta) {
   return(t(t(Quality(theta) * S) * Quality(theta)))
 } 
-Feature <- function(A) {
-  # return(sum(DistanceNew(rep(5, length(A)), A, 2, m)))
+ Feature <- function(A) {
+#   # return(sum(DistanceNew(rep(5, length(A)), A, 2, m)))
   return(c(sum(DistanceNew(rep(5, length(A)), A, 2, m)), length(A)))
 }
 Loss <- function(theta) {

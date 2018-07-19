@@ -49,7 +49,7 @@ Loss <- function(sigma) {
 
 # Parameter estimations
 time <- proc.time()
-sol <- nlm(Loss, 10)
+sol <- nlm(Loss, 3)
 proc.time() - time
 sol$estimate
 sol
@@ -57,6 +57,7 @@ warnings()
 Loss(10)
 Loss(7)
 
+warnings()
 # Algorithm for the gradient of the loss function
 
 
