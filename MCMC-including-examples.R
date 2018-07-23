@@ -11,7 +11,7 @@ library(MASS)
 Metropolis <- function(x, f, alpha=1){
   d <- length(x)
   y <- mvrnorm(1, x, diag(rep(alpha, d), d))
-  if (runif(1) > f(y) / f(x)) y <- x
+  if (runif(1) * f(x) > f(y)) y <- x
   return(y)
 }
 
@@ -19,15 +19,16 @@ Metropolis <- function(x, f, alpha=1){
 # the slice. We use an exponential random variable to define the width of the
 # interval.
 RandomInterval <- function (x, y, f, alpha=1) {
+  c <- f(x)
   # We make the interval the same length in every dimension.
   a <- rexp(1, rate=alpha)  # rexp(length(x), rate=alpha)
   b <- rexp(1, rate=alpha)  # rexp(length(x), rate=alpha)
   # One can check both endpoints simultaneously to avoid the need of two loops.
-  while (f(x - a) >= f(x) * y)  {# || f(x + b) >= f(x) * y) {
+  while (f(x - a) >= c * y)  {# || f(x + b) >= f(x) * y) {
     a <- 2 * a
     # b <- 2 * b
   }
-  while (f(x + b) >= f(x) * y) {
+  while (f(x + b) >= c * y) {
     b <- 2 * b
   }
   return(matrix(c(x - a, x + b), length(x)))
@@ -35,12 +36,14 @@ RandomInterval <- function (x, y, f, alpha=1) {
 # Doing a single slice sample.
 SliceSampling <- function (x, f, alpha=1) {
   d <- length(x)
+  a <- f(x)
   y <- runif(1)
   c <- RandomInterval(x, y, f, alpha)
   z <- runif(d, c[, 1], c[, 2])  # runif(1, -4, 4)
-  while (f(z) < f(x) * y) {
+  while (f(z) < a * y) {
     # c <- RandomInterval(x, y, f, alpha)
     z <- runif(d, c[, 1], c[, 2])
+    # z <- runif(d, c(-10, 0), c(-5, 4))
   }
   return(z)
 }
@@ -78,14 +81,14 @@ target <- function(x){
 library(cubature)
 Z <- hcubature(target, -20, 20)[[1]]
 
-x <- MCMC(target, 1, MH=FALSE, 10^4, alpha=.1)
-hist(x, breaks=seq(min(x), max(x), length=100), freq=FALSE, ylim=c(0, 0.7))
+x <- MCMC(target, 1, MH=TRUE, 10^4, alpha=1)
+hist(x, breaks=seq(min(x), max(x), length=100), freq=FALSE, ylim=c(0, .7))
 y <- seq(min(x), max(x), length=500)
 z <- target(y) / Z
 lines(y, z, col="red", lwd=2)
 
 # Calculating the acceptence rate for the MH algorithm; around 25% is desired
-sum(x[-1] != x[1:(length(x) - 1)])/(T - 1)
+sum(x[-1] != x[1:(length(x) - 1)])/(length(x) - 1)
 
 # Two dimensional toy example with a similar density. The points are plotted
 # and a heat map is created which also shows the marginal densities.
@@ -94,11 +97,21 @@ target2 <- function(x){
 }
 x <- MCMC(target2, c(1, 1), MH=FALSE, 10^4, alpha=3)
 plot(t(x), pch=16, col='black', cex=0.5)
+# Color housekeeping and loading library for heat map.
+library(RColorBrewer)
+rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))
+r <- rf(32)
+library(MASS)
 k <- kde2d(x[1, ], x[2, ], n=200, lims = c(-4.3, 4, -4, 4))
 image(k, col=r, xlim=c(-4.3, 4), ylim=c(-4, 4))
+# Adding the marginal densities.
 y1 <- seq(-4, 4, length=500)
 z1 <- sin(2 * y1)^2 * dnorm(y1) * 3
 lines(z1 - rep(3.8, 500), y1, col="red", lwd=2)
 y2 <- seq(-4.3, 4, length=500)
 z2 <- sin(y2)^2 * dnorm(y2) * 3
 lines(y2, z2 - rep(3.5, 500), col="red", lwd=2)
+
+# Remove all objects apart from functions
+rm(list = setdiff(ls(), lsf.str()))
+rm(list = ls())

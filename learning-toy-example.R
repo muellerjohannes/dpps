@@ -24,7 +24,7 @@ Quality <- function(theta) {
 LFunction <- function(theta) {
   return(t(t(Quality(theta) * S) * Quality(theta)))
 } 
- Feature <- function(A) {
+Feature <- function(A) {
 #   # return(sum(DistanceNew(rep(5, length(A)), A, 2, m)))
   return(c(sum(DistanceNew(rep(5, length(A)), A, 2, m)), length(A)))
 }
@@ -35,7 +35,7 @@ Loss <- function(theta) {
   for (i in 1:T) {
     A <- data[[i]]
     # x <- x + log(det(matrix(LFunction(theta)[A, A], length(A))))
-    x <- x + 2 * sum(theta * Feature(A)) + log(det(matrix(S[A, A], length(A))))
+    x <- x + 2 * sum(theta * Feature(A)) + log(det(S[A, A]))
   }
   return(- x + T * log(det(diag(rep(1, n)) + LFunction(theta))))
 }
@@ -45,7 +45,7 @@ time <- proc.time()
 sol <- nlm(Loss, c(-3, 0))
 proc.time() - time
 sol$estimate
-log(sqrt(m))
+log(2 * sqrt(m))
 
 # Algorithm for the gradient of the loss function
 
