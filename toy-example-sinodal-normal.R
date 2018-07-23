@@ -1,160 +1,107 @@
-# TODO: Implement the methods in the multivariate case.
+# TODO: Give the target function as a parameter and write MCMC function with
+# MH or Slice Sampling as argument.
 # Add the burn in period for the MH random walk. Also adjust the proposal.
 # Creating a first toy example for MCMC methods.
 # First we implement the Metropolis-Hastings algorithm.
 
-# Computation of the actual partition function.
-target <- function(x){
-  sin(x)^2 * sin(2 * x)^2 * dnorm(x)
-}
-Z <- integrate(target, -100, 100)[[1]]
-
-# Implement the propose and reject step.
-metropolis <- function(x, alpha=1){
-  y <- rnorm(1, mean=x, sd=alpha)  # runif(1, x - alpha, x + alpha)
-  if (runif(1) > target(y) / target(x)) y <- x
-  return(y)
-}
-
-# Now we turn towards slice sampling.
-# Proposing a random interval that includes the slice.
-RandomInterval <- function (x, y, alpha=1) {
-  a <- rexp(1, rate=alpha)
-  b <- rexp(1, rate=alpha)
-  # We check both endpoints simultaneously to avoid the need of two loops.
-  while (target(x - a) >= target(x) * y || target(x + b) >= target(x) * y) {
-    a <- 2 * a
-    b <- 2 * b
-  }
-  # while (target(x + b) >= target(x) * y) {
-  #   b <- 2 * b
-  # }
-  return(c(x - a, x + b))
-}
-# Doing a single slice sample.
-SliceSampling <- function (x, alpha=1) {
-  y <- runif(1)
-  c <- RandomInterval(x, y, alpha)
-  z <- runif(1, c[1], c[2])  # runif(1, -4, 4)
-  while (target(z) < target(x) * y) {
-    c <- RandomInterval(x, y, alpha)
-    z <- runif(1, c[1], c[2])
-  }
-  return(z)
-}
-
-# Testing the MCMC method including a histogram and the real density.
-# the MH algorithm and SliceSampling can simple be exchanged.
-T <- 10^4
-x <- rep(3.14, T)
-for (t in 2:T) x[t] <- SliceSampling(x[t-1], 2)
-# Throwing away the burn in period. Somehow this does make it worse...
-# x <- x[1:T/10]
-hist(x, breaks=seq(min(x), max(x), length=100), freq=FALSE, ylim=c(0, 0.7))
-y <- seq(min(x), max(x), length=500)
-z <- target(y) / Z
-lines(y, z, col="red", lwd=2)
-
-# Calculating the acceptence rate for the MH algorithm; 25% is desired
-sum(x[-1] != x[1:(length(x) - 1)])/(T - 1)
-
 # Multivariate setting.
 # Define the unnormalised density.
-target2 <- function(x){
-  # sin(x[1])^2 * sin(2 * x[2])^2 * dnorm(x[1]) * dnorm(x[2])
-  sin(x)^2 * sin(2 * x)^2 * dnorm(x)
+target <- function(x){
+  sin(x[1])^2 * sin(2 * x[2])^2 * dnorm(x[1]) * dnorm(x[2])
+  # sin(x)^2 * sin(2 * x)^2 * dnorm(x)
 }
 # Load library for multidimensional integration to compute the normalisation
 # constant.
 library(cubature)
-Z <- hcubature(target2, c(-100, -100), c(100, 100))[[1]]
+Z <- hcubature(target2, rep(-20, d), rep(20, d))[[1]]
 
-# Implement the propose and reject step.
+# Implement the propose and reject step. We use a Gaussian as a proposal with
+# covariance matrix alpha times the identity.
 # Load library for multivariate normal.
 library(MASS)
-metropolis2 <- function(x, alpha=1){
+Metropolis <- function(x, f, alpha=1){
   d <- length(x)
   y <- mvrnorm(1, x, diag(rep(alpha, d), d))
-  if (runif(1) > target2(y) / target2(x)) y <- x
+  if (runif(1) > f(y) / f(x)) y <- x
   return(y)
 }
 
 # Now we turn towards slice sampling.
-# Proposing a random interval that includes the slice.
-RandomInterval2 <- function (x, y, alpha=1) {
-  d <- length(x)
+# Proposing a random interval that includes the slice. We use an exponential
+# random variable to define the width of the interval.
+RandomInterval <- function (x, y, f, alpha=1) {
+  # We make the interval the same length in every dimension.
   a <- rexp(1, rate=alpha)  # rexp(length(x), rate=alpha)
   b <- rexp(1, rate=alpha)  # rexp(length(x), rate=alpha)
-  # We check both endpoints simultaneously to avoid the need of two loops.
-  while (target2(x - rep(a, d)) >= target2(x) * y || target2(x + rep(b, d)) >= target2(x) * y) {
+  # One can check both endpoints simultaneously to avoid the need of two loops.
+  while (f(x - a) >= f(x) * y)  {# || f(x + b) >= f(x) * y) {
     a <- 2 * a
+    # b <- 2 * b
+  }
+  while (f(x + b) >= f(x) * y) {
     b <- 2 * b
   }
-  # while (target(x + b) >= target(x) * y) {
-  #   b <- 2 * b
-  # }
   return(matrix(c(x - a, x + b), d))
 }
-
 # Doing a single slice sample.
-SliceSampling2 <- function (x, alpha=1) {
+SliceSampling <- function (x, f, alpha=1) {
   d <- length(x)
   y <- runif(1)
-  c <- RandomInterval2(x, y, alpha)
+  c <- RandomInterval(x, y, f, alpha)
   z <- runif(d, c[, 1], c[, 2])  # runif(1, -4, 4)
-  while (target2(z) < target2(x) * y) {
-    c <- RandomInterval2(x, y, alpha)
+  while (f(z) < f(x) * y) {
+    c <- RandomInterval(x, y, f, alpha)
     z <- runif(d, c[, 1], c[, 2])
   }
   return(z)
 }
 
+# Implementing the MCMC method. The function needs the unnormalised density f,
+# a starting value x0, sample size T whether it should be MH or Slice Sampling
+# and the parameter alpha, which either specifies the variance of the proposal
+# which is multivariate normal or the rate of the exponential random variable
+# which defines the thickness of the random interval.
+MCMC <- function (f, x0, T=10^3, MH=TRUE, alpha=1) {
+  d <- length(x0)
+  x <- matrix(rep(x0, T), d)
+  if (MH) {
+    for (t in 2:T) x[, t] <- Metropolis(x[, t-1], f, alpha) 
+  }
+  else {
+    # Check whether starting value is impossible. In this case the slice is the
+    # whole space and hence the endpoints of the random interval will diverge.
+    while (f(x0)==0) {
+      x0 <- mvrnorm(1, x0, diag(rep(alpha, d), d))
+    }
+    x[, 1] <- x0
+    for (t in 2:T) x[, t] <- SliceSampling(x[, t-1], f, alpha)
+  }
+  return(x)
+}
+
 T <- 10^4
-x <- matrix(rep(.2, T), 1)
-for (t in 2:T) x[, t] <- metropolis2(x[, t-1], 2)
+x <- matrix(rep(.2, d * T), d)
+for (t in 2:T) x[, t] <- SliceSampling(x[, t-1], target, 0.1)
+
+# One dimensional case, making nice pictures also.
+x <- MCMC(target, 1, MH=FALSE, 10^4, alpha=.4)
+hist(x, breaks=seq(min(x), max(x), length=100), freq=FALSE, ylim=c(0, 0.7))
+y <- seq(min(x), max(x), length=500)
+z <- target(y) / Z
+lines(y, z, col="red", lwd=2)
+
+# Calculating the acceptence rate for the MH algorithm; around 25% is desired
+sum(x[-1] != x[1:(length(x) - 1)])/(T - 1)
+
+# Two dimensional toy example with a similar density. The points are plotted
+# and a heat map is created which also shows the marginal densities.
+x <- MCMC(target, c(0, 0), MH=FALSE, 10^4, alpha=3)
 plot(t(x), pch=16, col='black', cex=0.5)
-k <- kde2d(x[1, ], x[2, ], n=200, lims = c(-4, 4, -4, 4))
-image(k, col=r, xlim=c(-4, 4), ylim=c(-4, 4))
-y1 <- seq(min(x[2, ]), max(x[2, ]), length=500)
+k <- kde2d(x[1, ], x[2, ], n=200, lims = c(-4.3, 4, -4, 4))
+image(k, col=r, xlim=c(-4.3, 4), ylim=c(-4, 4))
+y1 <- seq(-4, 4, length=500)
 z1 <- sin(2 * y1)^2 * dnorm(y1) * 3
-lines(z1 - rep(3.5, 500), y1, col="red", lwd=2)
-y2 <- seq(min(x[1, ]), max(x[1, ]), length=500)
+lines(z1 - rep(3.8, 500), y1, col="red", lwd=2)
+y2 <- seq(-4.3, 4, length=500)
 z2 <- sin(y2)^2 * dnorm(y2) * 3
 lines(y2, z2 - rep(3.5, 500), col="red", lwd=2)
-
-
-# hist(x, breaks=seq(min(x), max(x), length=100), freq=FALSE)
-
-
-source("http://bioconductor.org/biocLite.R")
-biocLite("hexbin")
-y
-install.packages("hexbin")
-y
-library(hexbin)
-a
-y
-install.packages("gplots")
-y
-library(gplots)
-
-library(MASS)
-
-x <- rnorm(mean=1.5, 5000)
-y <- rnorm(mean=1.6, 5000)
-df <- data.frame(x,y)
-plot(df, pch=16, col='black', cex=0.5)
-k <- kde2d(df$x, df$y, n=200)
-image(k, col=r)
-hist2d(1)
-
-library(RColorBrewer)
-rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))
-r <- rf(32)
-
-library(hexbin)
-# Create hexbin object and plot
-h <- hexbin(df)
-plot(h)
-plot(h, colramp=rf)
- 
