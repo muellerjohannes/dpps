@@ -17,7 +17,7 @@ DistanceNew <- function (i, j, n, d) {
 }
 
 # Define the size of the grid
-m <- 39
+m <- 19
 n <- (m + 1)^2
 # Modelling phi and q
 q <- rep(sqrt(m), n)
@@ -33,12 +33,13 @@ y <- rep(1:d, n)
 phi <- dnorm(2 * sqrt(m) * matrix(DistanceNew(x, y, m, sqrt(d) - 1), ncol=n))
 
 # Log linear quality for the points in the square size: 39x39 _________________
-q <- exp(-6 * DistanceNew(rep(5, n), 1:n, 2, m) + log(sqrt(m)))
+q <- exp(-8 * DistanceNew(rep(5, n), 1:n, 2, m) + log(2 * sqrt(m)))
 x <- ceiling(1:n^2 / n)
 y <- rep(1:n, n)
 phi <- dnorm(2 * sqrt(m) * matrix(DistanceNew(x, y, m, m), n))
 
-# Define L
+# Define S and L
+S <- DefineS(q, phi)
 L <- DefineL(q, phi)
 # Alternative the direct modelling of L
 L <- rep(0, n^2)

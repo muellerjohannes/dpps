@@ -10,7 +10,10 @@
 library(MASS)
 Metropolis <- function(x, f, alpha=1){
   d <- length(x)
-  y <- mvrnorm(1, x, diag(rep(alpha, d), d))
+  if (length(alpha) == 1) {
+    alpha <- diag(rep(alpha, d), d)
+  }
+  y <- mvrnorm(1, x, alpha)
   if (runif(1) * f(x) > f(y)) y <- x
   return(y)
 }
@@ -24,11 +27,14 @@ RandomInterval <- function (x, y, f, alpha=1) {
   a <- rexp(1, rate=alpha)  # rexp(length(x), rate=alpha)
   b <- rexp(1, rate=alpha)  # rexp(length(x), rate=alpha)
   # One can check both endpoints simultaneously to avoid the need of two loops.
-  while (f(x - a) >= c * y)  {# || f(x + b) >= f(x) * y) {
+  while (TRUE) {
+    help <- f(x - a)
+    if (is.nan(help) || help < c * y) break
     a <- 2 * a
-    # b <- 2 * b
   }
-  while (f(x + b) >= c * y) {
+  while (TRUE) {
+    help <- f(x + b)
+    if (is.nan(help) || help < c * y) break
     b <- 2 * b
   }
   return(matrix(c(x - a, x + b), length(x)))
@@ -40,9 +46,12 @@ SliceSampling <- function (x, f, alpha=1) {
   y <- runif(1)
   c <- RandomInterval(x, y, f, alpha)
   z <- runif(d, c[, 1], c[, 2])  # runif(1, -4, 4)
-  while (f(z) < a * y) {
+  while (TRUE) {
+    help <- f(z)
+    if (is.nan(help) || help < a * y) z <- runif(d, c[, 1], c[, 2])
+    else break
     # c <- RandomInterval(x, y, f, alpha)
-    z <- runif(d, c[, 1], c[, 2])
+    # z <- runif(d, c[, 1], c[, 2])
     # z <- runif(d, c(-10, 0), c(-5, 4))
   }
   return(z)
@@ -62,7 +71,7 @@ MCMC <- function (f, x0, T=10^3, MH=TRUE, alpha=1) {
   else {
     # Check whether starting value is impossible. In this case the slice is the
     # whole space and hence the endpoints of the random interval will diverge.
-    while (f(x0)==0) {
+    while (is.nan(f(x0)) || f(x0)==0) {
       x0 <- mvrnorm(1, x0, diag(rep(alpha, d), d))
     }
     x[, 1] <- x0
@@ -95,7 +104,7 @@ sum(x[-1] != x[1:(length(x) - 1)])/(length(x) - 1)
 target2 <- function(x){
   sin(x[1])^2 * sin(2 * x[2])^2 * dnorm(x[1]) * dnorm(x[2])
 }
-x <- MCMC(target2, c(1, 1), MH=FALSE, 10^4, alpha=3)
+x <- MCMC(target2, c(1, 1), MH=TRUE, 10^4, alpha=3)
 plot(t(x), pch=16, col='black', cex=0.5)
 # Color housekeeping and loading library for heat map.
 library(RColorBrewer)

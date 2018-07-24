@@ -4,6 +4,14 @@
 
 # Define the function that computes L from q and phi as well as the truncated
 # eigendecomposition and a poisson points process of given cardinality.
+DefineS <- function (q, phi) {
+  n <- length(q)
+  for (i in 1:n) {
+    phi[, i] <- sum(phi[, i]^2)^(-1/2) * phi[, i]
+  }
+  S <- t(phi) %*% phi
+  return(S)
+}
 DefineL <- function (q, phi) {
   n <- length(q)
   for (i in 1:n) {
